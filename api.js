@@ -1,7 +1,41 @@
 const { createCanvas, loadImage } = require('canvas')
-const canvas = createCanvas(1942, 372)
-const ctx = canvas.getContext('2d')
-const fs = require('fs')
+var express = require("express");
+var bodyParser = require('body-parser')
+var path = require("path");
+var fs = require("fs");
+var nocache = require('nocache')
+
+var app = express();
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
+app.use(nocache())
+
+// Add headers
+app.use(function (req, res, next) {
+
+  // Website you wish to allow to connect
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
+
+  // Request methods you wish to allow
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+  // Request headers you wish to allow
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+
+  // Set to true if you need the website to include cookies in the requests sent
+  // to the API (e.g. in case you use sessions)
+  res.setHeader('Access-Control-Allow-Credentials', true);
+
+  // Pass to next layer of middleware
+  next();
+});
+
+
+const PORT = 3000;
+
+app.listen(PORT, () => {
+ console.log("Server running on port " + PORT);
+});
 
 var E = 0;
 var F = 1;
@@ -21,7 +55,7 @@ var chromatic = [ E, F, Gb, G, Ab, A, Bb, B, C, Db, D, Eb, E ];
 var intervals = [ "R", "m2", "2", "m3", "3", "P4", "4#", "P5", "m6", "6", "m7", "7", "R" ];
 var names = [ "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#", "E" ];
 var tuning = [ E, A, D, G, B, E ];
-var display = [ C, D, E, F, G, A, B ];
+// var display = [ C, D, E, F, G, A, B ];
 
 var stringTop1 = 92;
 var stringBottom1 = 286;
@@ -84,23 +118,40 @@ var getNoteName = (note) => {
   return names[note];
 }
 
-loadImage('./src/assets/fretboard-large.png').then((image) => {
-  ctx.drawImage(image, 0, 0);
+app.get("/image", (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.sendFile(path.join(__dirname, 'out.png'));
+ });
 
-  for (var fret = 0; fret < 13; fret++) {
-    for (var string = 0; string < 6; string++) {
-      var note = getNote(tuning, fret, string);
-      if (display.indexOf(note) > -1) {
-        var root = display[0];
-        // var text = getNoteInterval(root, note);
-        var text = getNoteName(note);
-        drawNote(ctx, fret, string, root === note, text);
+app.post("/update", (req, res, next) => {
+
+  console.log(req.body);
+
+  var display = req.body.notes;
+  var root = req.body.root
+
+  loadImage('./src/assets/fretboard-large.png').then((image) => {
+    const canvas = createCanvas(1942, 372)
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(image, 0, 0);
+  
+    for (var fret = 0; fret < 13; fret++) {
+      for (var string = 0; string < 6; string++) {
+        var note = getNote(tuning, fret, string);
+        if (display.indexOf(note + '') > -1) {
+          // var text = getNoteInterval(root, note);
+          var text = getNoteName(note);
+          drawNote(ctx, fret, string, root == note, text);
+        }
       }
     }
-  }
 
-  const out = fs.createWriteStream(__dirname + '/out.png')
-  const stream = canvas.createPNGStream()
-  stream.pipe(out)
-  out.on('finish', () =>  console.log('The PNG file was created.'))
-})
+    const out = fs.createWriteStream(__dirname + '/out.png')
+    const stream = canvas.createPNGStream()
+    stream.pipe(out)
+    out.on('finish', () =>   {
+      console.log('The PNG file was created.');
+      res.sendStatus(200);
+    })
+  })
+ });
