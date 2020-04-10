@@ -54,7 +54,7 @@ var chromatic = [ E, F, Gb, G, Ab, A, Bb, B, C, Db, D, Eb, E ];
 
 var intervals = [ "R", "m2", "2", "m3", "3", "P4", "4#", "P5", "m6", "6", "m7", "7", "R" ];
 var names = [ "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#", "E" ];
-var tuning = [ E, A, D, G, B, E ];
+// var tuning = [ E, A, D, G, B, E ];
 // var display = [ C, D, E, F, G, A, B ];
 
 var stringTop1 = 92;
@@ -103,7 +103,7 @@ var drawNote = (ctx, fret, string, isRoot, text) => {
 }
 
 var getNote = (tuning, fret, string) => {
-  var note = tuning[5 - string] + fret;
+  var note = parseInt(tuning[5 - string]) + fret;
   if (note >= 12) note -= 12;
   return note;
 }
@@ -129,6 +129,7 @@ app.post("/update", (req, res, next) => {
 
   var display = req.body.notes;
   var root = req.body.root
+  var tuning = req.body.tuning;
 
   loadImage('./src/assets/fretboard-large.png').then((image) => {
     const canvas = createCanvas(1942, 372)
