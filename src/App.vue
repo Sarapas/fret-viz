@@ -122,7 +122,7 @@
     </select>
   </div>
 
-    <button v-on:click="update">Update</button>
+    <button class="button" v-on:click="update">Show</button>
     <img id="fretboard" v-if="show === true" src="http://localhost:3000/image" />
     <img class="spinner" v-if="loading" src="./assets/spinner.gif" />
   </div>
@@ -208,5 +208,14 @@ select #root {
 }
 .tuning {
   margin-bottom: 20px;
+}
+.button {
+  font-size: 16px;
+  background: white;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  outline: none;
+  margin-bottom: 50px;
 }
 </style>
