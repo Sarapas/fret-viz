@@ -122,6 +122,13 @@
     </select>
   </div>
 
+  <div class="value">
+    <input type="radio" id="note" name="value" value="note" v-model="value">
+    <label for="male">Note</label>
+    <input type="radio" id="interval" name="value" value="interval" v-model="value">
+    <label for="female">Interval</label>
+  </div>
+
     <button class="button" v-on:click="update">Show</button>
     <img id="fretboard" v-if="show === true" src="http://localhost:3000/image" />
     <img class="spinner" v-if="loading" src="./assets/spinner.gif" />
@@ -139,6 +146,7 @@ export default {
       loading: false,
       root: "",
       notes: [],
+      value: 'note',
       string1: '0',
       string2: '5',
       string3: '10',
@@ -152,7 +160,8 @@ export default {
       let data = {
           notes: this.notes,
           root: this.root,
-          tuning: [ this.string1, this.string2, this.string3, this.string4, this.string5, this.string6 ]
+          tuning: [ this.string1, this.string2, this.string3, this.string4, this.string5, this.string6 ],
+          value: this.value
         };
 
         this.show = false;
@@ -196,6 +205,11 @@ input[type='checkbox'] {
   height: 16px;
   margin-left: 30px;
 }
+input[type='radio'] {
+  width: 16px;
+  height: 16px;
+  margin-left: 30px;
+}
 .notes {
   margin-bottom: 20px;
 }
@@ -217,5 +231,8 @@ select #root {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   outline: none;
   margin-bottom: 50px;
+}
+.value {
+  margin-bottom: 30px;
 }
 </style>

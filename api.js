@@ -130,6 +130,7 @@ app.post("/update", (req, res, next) => {
   var display = req.body.notes;
   var root = req.body.root
   var tuning = req.body.tuning;
+  var value = req.body.value;
 
   loadImage('./src/assets/fretboard-large.png').then((image) => {
     const canvas = createCanvas(1942, 372)
@@ -140,8 +141,12 @@ app.post("/update", (req, res, next) => {
       for (var string = 0; string < 6; string++) {
         var note = getNote(tuning, fret, string);
         if (display.indexOf(note + '') > -1) {
-          // var text = getNoteInterval(root, note);
-          var text = getNoteName(note);
+          var text = "";
+          if (value == 'interval') {
+            text = getNoteInterval(root, note);
+          } else if (value == 'note') {
+            text = getNoteName(note);
+          }
           drawNote(ctx, fret, string, root == note, text);
         }
       }
