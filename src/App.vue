@@ -130,7 +130,7 @@
   </div>
 
     <button class="button" v-on:click="update">Show</button>
-    <img id="fretboard" v-if="show === true" src="http://localhost:3000/image" />
+    <img id="fretboard" v-if="show === true" :src="imgData" />
     <img class="spinner" v-if="loading" src="./assets/spinner.gif" />
   </div>
 </template>
@@ -152,28 +152,29 @@ export default {
       string3: '10',
       string4: '3',
       string5: '7',
-      string6: '0'
+      string6: '0',
+      imgData: null
     }
   },
   methods: {
     update() {
       let data = {
-          notes: this.notes,
-          root: this.root,
-          tuning: [ this.string1, this.string2, this.string3, this.string4, this.string5, this.string6 ],
-          value: this.value
+          // notes: this.notes,
+          // root: this.root,
+          // tuning: [ this.string1, this.string2, this.string3, this.string4, this.string5, this.string6 ],
+          // value: this.value
         };
 
         this.show = false;
         this.loading = true;
 
-        axios.post('http://localhost:3000/update', data).then((result) => {
+        axios.post('https://localhost:5001/fretboard/image', data, { headers: { 'Content-Type': 'application/json' } }).then((result) => {
           this.show = true;
           this.loading = false;
-          return result.data;
+          this.imgData = result.data;
         })
         .catch(error => {
-          console.log(error.response)
+          console.log("Response error: " + error.response)
         });
     }
   }
