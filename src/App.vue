@@ -159,11 +159,22 @@ export default {
   methods: {
     update() {
       let data = {
-          // notes: this.notes,
-          // root: this.root,
-          // tuning: [ this.string1, this.string2, this.string3, this.string4, this.string5, this.string6 ],
-          // value: this.value
+          notes: [],
+          root: parseInt(this.root),
+          tuning: [ 
+            parseInt(this.string1),
+            parseInt(this.string2),
+            parseInt(this.string3),
+            parseInt(this.string4),
+            parseInt(this.string5),
+            parseInt(this.string6)
+          ],
+          value: this.value
         };
+
+        for (let i = 0; i < this.notes.length; i++) {
+          data.notes.push(parseInt(this.notes[i]));
+        }
 
         this.show = false;
         this.loading = true;
