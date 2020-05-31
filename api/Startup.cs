@@ -25,9 +25,11 @@ namespace api
                 options.AddPolicy(name: FRONTEND_ORIGIN,
                                 builder =>
                                 {
-                                    builder.WithOrigins("http://localhost:8080").AllowAnyMethod().AllowAnyHeader();
+                                    builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
                                 });
             });
+
+            services.AddScoped<IFretboardService, FretboardService>();
 
             services.AddControllers();
         }

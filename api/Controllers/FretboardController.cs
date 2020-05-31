@@ -10,10 +10,12 @@ namespace api.Controllers
     public class FretboardController : ControllerBase
     {
         private readonly ILogger<FretboardController> _logger;
+        private readonly IFretboardService _fretboardService;
 
-        public FretboardController(ILogger<FretboardController> logger)
+        public FretboardController(ILogger<FretboardController> logger, IFretboardService fretboardService)
         {
             _logger = logger;
+            _fretboardService = fretboardService;
         }
 
         [HttpPost("Image")]
@@ -34,7 +36,7 @@ namespace api.Controllers
             // Console.WriteLine("Root: " + request.Root);
             // Console.WriteLine("Value: " + request.Value);
 
-            Byte[] bytes = System.IO.File.ReadAllBytes("../src/assets/fretboard-large.png");
+            var bytes = _fretboardService.GetFretboardImage(request.Notes, request.Root, request.Tuning, request.Value);
             String file = Convert.ToBase64String(bytes);
             return Content("data:image/png;base64, " + file);
         }
