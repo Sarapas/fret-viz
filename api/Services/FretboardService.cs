@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -8,13 +10,97 @@ public class FretboardService : IFretboardService
 {
     private const string FILE = "../src/assets/fretboard-large.png";
 
-    public byte[] GetFretboardImage(Note[] notes, Note? root, Note[] tuning, string value) 
+    public byte[] GetFretboardImage(Note[] notes, Note? root, Note[] tuning, string value)
     {
         byte[] bytes = System.IO.File.ReadAllBytes(FILE);
         Image image = Image.Load(bytes);
 
-        EllipsePolygon circle = new EllipsePolygon(x: 100, y: 100, width: 30, height: 30);
-        image.Mutate(x => x.Fill(Color.Red, circle));
+        var stringTop1 = 92;
+        var stringBottom1 = 286;
+        var stringTop12 = 66;
+        var stringBottom12 = 310;
+        var frets = new int[] { 20, 142, 200, 190, 178, 170, 158, 152, 137, 134, 122, 120, 112 };
+
+        Note GetNote(Note[] tuning, int fret, int str)
+        {
+            var note = tuning[5 - str] + fret;
+            if ((int)note >= 12) note -= 12;
+            return note;
+        }
+
+        string GetNoteInterval(Note root, Note note)
+        {
+            var intervals = new string[] { "R", "m2", "2", "m3", "3", "P4", "4#", "P5", "m6", "6", "m7", "7", "R" };
+            var n = note - root;
+            if (n < 0) n += 12;
+            return intervals[n];
+        };
+
+        string GetNoteName(Note note)
+        {
+            var names = new string[] { "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#", "E" };
+            return names[(int)note];
+        }
+
+        void DrawNote(Image image, int fret, int str, bool isRoot, string text)
+        {
+            var fretPos = 0;
+            for (var f = 0; f <= fret; fretPos += frets[f++]);
+
+            var stringTop = stringTop1 - (stringTop1 - stringTop12) / 12 * fret;
+            var stringBottom = stringBottom1 + (stringBottom12 - stringBottom1) / 12 * fret;
+            var stringPos = stringTop + (stringBottom - stringTop) / 5 * str;
+
+            var R = 18;
+
+            var location = new PointF(fretPos, stringPos);
+            var circle = new EllipsePolygon(location, R);
+            var fillColor = isRoot ? Color.Red : Color.Black;
+            var outlinePen = new Pen(Color.Black, 1, new float[0]);
+            var fo = SystemFonts.Find("Tahoma");
+            var font = new Font(fo, 19, FontStyle.Regular);
+            var fontLocation = new PointF(fretPos, stringPos);
+
+            var options = new TextGraphicsOptions()
+            {
+                TextOptions = new TextOptions()
+                {
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+
+            image.Mutate(x => 
+                x.Fill(fillColor, circle)
+                 .Draw(new ShapeGraphicsOptions() , outlinePen, circle)
+                 .DrawText(options, text, font, Color.White, fontLocation));
+        };
+
+        if (notes.Length > 0)
+        {
+            root = root ?? notes[0];
+
+            for (var fret = 0; fret < 13; fret++)
+            {
+                for (var str = 0; str < 6; str++)
+                {
+                    var note = GetNote(tuning, fret, str);
+                    if (Array.IndexOf(notes, note) > -1)
+                    {
+                        var text = "";
+                        if (value == "interval")
+                        {
+                            text = GetNoteInterval(root.Value, note);
+                        }
+                        else if (value == "note")
+                        {
+                            text = GetNoteName(note);
+                        }
+                        DrawNote(image, fret, str, root == note, text);
+                    }
+                }
+            }
+        }
 
         using (var ms = new MemoryStream())
         {
