@@ -22,10 +22,10 @@ namespace api.Controllers
         public async Task<IActionResult> Image(FretboardRequest request)
         {
             if (request.Notes == null)
-                request.Notes = new Note[0];
+                request.Notes = new NoteEnum[0];
 
             if (request.Tuning == null)
-                request.Tuning = new Note[] { Note.E, Note.A, Note.D, Note.G, Note.B, Note.E };
+                request.Tuning = new NoteEnum[] { NoteEnum.E, NoteEnum.A, NoteEnum.D, NoteEnum.G, NoteEnum.B, NoteEnum.E };
 
             if (request.Value == null) {
                 request.Value = "note";
@@ -43,9 +43,9 @@ namespace api.Controllers
 
         public class FretboardRequest
         {
-            public Note[] Notes { get; set; }
-            public Note? Root { get; set; }
-            public Note[] Tuning { get; set; }
+            public NoteEnum[] Notes { get; set; }
+            public NoteEnum? Root { get; set; }
+            public NoteEnum[] Tuning { get; set; }
             public string Value { get; set; }
         }
     }

@@ -10,7 +10,7 @@ public class FretboardService : IFretboardService
 {
     private const string FILE = "../src/assets/fretboard-large.png";
 
-    public byte[] GetFretboardImage(Note[] notes, Note? root, Note[] tuning, string value)
+    public byte[] GetFretboardImage(NoteEnum[] notes, NoteEnum? root, NoteEnum[] tuning, string value)
     {
         byte[] bytes = System.IO.File.ReadAllBytes(FILE);
         Image image = Image.Load(bytes);
@@ -21,14 +21,14 @@ public class FretboardService : IFretboardService
         var stringBottom12 = 310;
         var frets = new int[] { 20, 142, 200, 190, 178, 170, 158, 152, 137, 134, 122, 120, 112 };
 
-        Note GetNote(Note[] tuning, int fret, int str)
+        NoteEnum GetNote(NoteEnum[] tuning, int fret, int str)
         {
             var note = tuning[5 - str] + fret;
             if ((int)note >= 12) note -= 12;
             return note;
         }
 
-        string GetNoteInterval(Note root, Note note)
+        string GetNoteInterval(NoteEnum root, NoteEnum note)
         {
             var intervals = new string[] { "R", "m2", "2", "m3", "3", "P4", "4#", "P5", "m6", "6", "m7", "7", "R" };
             var n = note - root;
@@ -36,9 +36,9 @@ public class FretboardService : IFretboardService
             return intervals[n];
         };
 
-        string GetNoteName(Note note)
+        string GetNoteName(NoteEnum note)
         {
-            var names = new string[] { "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#", "E" };
+            var names = new string[] { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A" };
             return names[(int)note];
         }
 
