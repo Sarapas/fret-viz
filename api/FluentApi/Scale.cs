@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class Scale
 {
@@ -25,4 +26,42 @@ public class Scale
 
     public List<IntervalEnum> Intervals { private set; get; }
     public List<NoteEnum> Notes { private set; get; }
+    private List<NoteEnum> UniqueNotes
+    {
+        get
+        {
+            return Notes.ToArray()[0..^1].ToList();
+        }
+    }
+
+    public List<Chord> GetChords(int noteCount)
+    {
+        var chords = new List<Chord>();
+        foreach (var note in UniqueNotes)
+        {
+            var chord = new Chord();
+            chord.Notes.Add(note);
+            NoteEnum lastNote = note;
+            for (var i = 1; i < noteCount; i++)
+            {
+                var n = GetNextChordNote(lastNote);
+                chord.Notes.Add(n);
+                lastNote = n;
+            }
+            chords.Add(chord);
+        }
+        return chords;
+    }
+
+    private NoteEnum GetNextChordNote(NoteEnum note)
+    {
+        var index = UniqueNotes.IndexOf(note);
+        if (index < 0) {
+            Console.WriteLine(note);
+            throw new Exception("Note does not exist in the scale");
+        }
+
+        var i = (index + 2) % UniqueNotes.Count;
+        return UniqueNotes[i];
+    }
 }

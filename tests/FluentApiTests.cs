@@ -6,12 +6,7 @@ public class FluentApiTests
     [Fact]
     public void BMajorScale_ShouldContain_CorrectIntervals()
     {
-        var intervals = ScaleGuide.Bmajor.Intervals;
-
-        foreach (var interval in intervals) {
-            Console.WriteLine(interval);
-        }
-
+        var intervals = ScaleGuide.Major(NoteEnum.B).Intervals;
         Assert.Equal(8, intervals.Count);
         Assert.Equal(IntervalEnum.Root, intervals[0]);
         Assert.Equal(IntervalEnum.MajorSecond, intervals[1]);
@@ -26,7 +21,7 @@ public class FluentApiTests
     [Fact]
     public void GMajorScale_ShouldContain_CorrectNotes()
     {
-        var notes = ScaleGuide.Gmajor.Notes;
+        var notes = ScaleGuide.Major(NoteEnum.G).Notes;
         Assert.Equal(8, notes.Count);
         Assert.Equal(NoteEnum.G, notes[0]);
         Assert.Equal(NoteEnum.A, notes[1]);
@@ -36,5 +31,16 @@ public class FluentApiTests
         Assert.Equal(NoteEnum.E, notes[5]);
         Assert.Equal(NoteEnum.Gb, notes[6]);
         Assert.Equal(NoteEnum.G, notes[7]);
+    }
+
+    [Fact]
+    public void CMajorScale_ShouldContain_AminorTriad()
+    {
+        var chords = ScaleGuide.Major(NoteEnum.C).GetChords(3);
+        Assert.Equal(7, chords.Count);
+        var am = chords[5];
+        Assert.Equal(am.Notes[0], NoteEnum.A);
+        Assert.Equal(am.Notes[1], NoteEnum.C);
+        Assert.Equal(am.Notes[2], NoteEnum.E);
     }
 }
