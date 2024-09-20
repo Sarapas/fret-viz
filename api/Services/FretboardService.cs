@@ -56,24 +56,23 @@ public class FretboardService : IFretboardService
             var location = new PointF(fretPos, stringPos);
             var circle = new EllipsePolygon(location, R);
             var fillColor = isRoot ? Color.Red : Color.Black;
-            var outlinePen = new Pen(Color.Black, 1, new float[0]);
-            var fo = SystemFonts.Find("Tahoma");
-            var font = new Font(fo, 19, FontStyle.Regular);
+            var outlinePen = new SolidPen(Color.Black, 1);
+            var fo = SystemFonts.Get("Tahoma");
+            var font = new Font(fo, 19, FontStyle.Bold);
             var fontLocation = new PointF(fretPos, stringPos);
 
-            var options = new TextGraphicsOptions()
+            var textOptions = new RichTextOptions(font)
             {
-                TextOptions = new TextOptions()
-                {
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                }
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Origin = fontLocation
             };
 
-            image.Mutate(x => 
+            image.Mutate(x =>
                 x.Fill(fillColor, circle)
-                 .Draw(new ShapeGraphicsOptions() , outlinePen, circle)
-                 .DrawText(options, text, font, Color.White, fontLocation));
+                 .Draw(new DrawingOptions(), outlinePen, circle)
+                 //.DrawText(textOptions, text, new SolidPen(Color.White, 1.5f)));
+                 .DrawText(textOptions, text, Color.White));
         };
 
         if (notes.Length > 0)

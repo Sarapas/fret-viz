@@ -20,5 +20,7 @@ yarn-error.log*
 *.sln
 *.sw?
 
+.vs/**/*
+
 **/bin/**/*
 **/obj/**/*
