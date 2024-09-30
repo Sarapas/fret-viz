@@ -30,7 +30,7 @@ function App() {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('https://localhost:44387/fretboard/image', {
+            const response = await fetch('/fretboard/image', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
