@@ -11,7 +11,7 @@ namespace WebApi.Services;
 
 public class FretboardService : IFretboardService
 {
-    private const string FILE = "../src/assets/fretboard-large.png";
+    private const string FILE = "./images/fretboard-large.png";
 
     public byte[] GetFretboardImage(NoteEnum[] notes, NoteEnum? root, NoteEnum[] tuning, string value)
     {
