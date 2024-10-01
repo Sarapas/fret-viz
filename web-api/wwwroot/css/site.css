@@ -1,57 +1,64 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center; /* Center content horizontally */
-    align-items: flex-start; /* Align content to the top */
-    height: 100vh;
-    box-sizing: border-box;
-}
-
-.container {
+#app {
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: #2c3e50;
+    margin-top: 60px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-    width: 100%;
-    max-width: 800px; /* Maximum width for better centering control */
-    padding: 20px;
-}
-
-.image-container {
-    margin-top: 20px;
-    border: 1px solid #ccc;
-    padding: 10px;
-    display: flex;
-    justify-content: center;
     align-items: center;
-    width: 100%;
-    max-height: 400px;
-    overflow: hidden;
 }
 
 img {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
 }
 
-.selectbox, button {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+.spinner {
+    display: block;
+    width: 100px;
+    height: 100px;
 }
 
-.tuning, .notes {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    margin-left: 30px;
 }
 
-    select, .notes input {
-        margin: 5px;
-    }
+input[type='radio'] {
+    width: 16px;
+    height: 16px;
+    margin-left: 30px;
+}
+
+.notes {
+    margin-bottom: 20px;
+}
+
+.selectbox {
+    margin-bottom: 20px;
+}
+
+select #root {
+    width: 80px;
+    height: 22px;
+}
+
+.tuning {
+    margin-bottom: 20px;
+}
+
+.button {
+    font-size: 16px;
+    background: white;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    outline: none;
+    margin-bottom: 50px;
+}
+
+.value {
+    margin-bottom: 30px;
+}
