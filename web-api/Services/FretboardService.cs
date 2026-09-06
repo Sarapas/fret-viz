@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing;
@@ -12,6 +13,19 @@ namespace WebApi.Services;
 public class FretboardService : IFretboardService
 {
     private const string FILE = "./images/fretboard-large.png";
+
+    private static readonly string[] PreferredFontFamilies = { "DejaVu Sans", "Tahoma", "Liberation Sans", "Arial" };
+
+    private static FontFamily GetLabelFontFamily()
+    {
+        foreach (var name in PreferredFontFamilies)
+        {
+            if (SystemFonts.TryGet(name, out var family))
+                return family;
+        }
+
+        return SystemFonts.Families.First();
+    }
 
     public byte[] GetFretboardImage(NoteEnum[] notes, NoteEnum? root, NoteEnum[] tuning, string value)
     {
@@ -60,7 +74,7 @@ public class FretboardService : IFretboardService
             var circle = new EllipsePolygon(location, R);
             var fillColor = isRoot ? Color.Red : Color.Black;
             var outlinePen = new SolidPen(Color.Black, 1);
-            var fo = SystemFonts.Get("DejaVu Sans");
+            var fo = GetLabelFontFamily();
             var font = new Font(fo, 19, FontStyle.Bold);
             var fontLocation = new PointF(fretPos, stringPos);
 

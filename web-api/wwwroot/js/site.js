@@ -1,6 +1,43 @@
-﻿const { useState } = React;
+const { useState, useEffect } = React;
 
-function App() {
+const NOTE_LABELS = [
+    ['E', '0'], ['F', '1'], ['F#/Gb', '2'], ['G', '3'], ['G#/Ab', '4'], ['A', '5'],
+    ['A#/Bb', '6'], ['B', '7'], ['C', '8'], ['C#/Db', '9'], ['D', '10'], ['D#/Eb', '11']
+];
+
+function useRoute() {
+    const [path, setPath] = useState(window.location.pathname);
+
+    useEffect(() => {
+        const onPopState = () => setPath(window.location.pathname);
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, []);
+
+    const navigate = (to) => {
+        window.history.pushState({}, '', to);
+        setPath(to);
+    };
+
+    return [path, navigate];
+}
+
+function NoteSelect({ value, onChange, allowEmpty }) {
+    return (
+        <select value={value} onChange={(e) => onChange(e.target.value)}>
+            {allowEmpty && <option disabled value="">---</option>}
+            {NOTE_LABELS.map(([label, val]) => (
+                <option key={val} value={val}>{label}</option>
+            ))}
+        </select>
+    );
+}
+
+function Landing() {
+    return <div className="landing" />;
+}
+
+function FretsApp({ onBack }) {
     const [imageUrl, setImageUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -9,18 +46,15 @@ function App() {
     const [tuning, setTuning] = useState([0, 5, 10, 3, 7, 0]);
     const [type, setType] = useState('interval');
 
-    // Handle checkbox change
     const handleNoteChange = (event) => {
-        console.log(event.target.value);
         const value = parseInt(event.target.value, 10);
         setNotes(prevNotes =>
             event.target.checked
-                ? [...prevNotes, value] // Add value if checked
-                : prevNotes.filter(note => note !== value) // Remove value if unchecked
+                ? [...prevNotes, value]
+                : prevNotes.filter(note => note !== value)
         );
     };
 
-    // Handle tuning change
     const handleTuningChange = (index, value) => {
         const newTuning = [...tuning];
         newTuning[index] = parseInt(value, 10);
@@ -37,9 +71,9 @@ function App() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    notes: notes, // Use the selected notes
-                    tuning: tuning, // Use the selected tuning
-                    root: parseInt(root, 10), // Use the selected root value
+                    notes: notes,
+                    tuning: tuning,
+                    root: parseInt(root, 10),
                     value: type
                 })
             });
@@ -57,89 +91,91 @@ function App() {
         }
     };
 
-    const tuningNote = (initialValue, onChange, allowEmpty) => {
-        const [selectedValue, setSelectedValue] = useState(initialValue);
-
-        const onValueChange = (e) => {
-            const val = e.target.value;
-            setSelectedValue(val);
-            onChange(val);
-        }
-
-        return (
-            <select value={selectedValue} onChange={onValueChange}>
-                { allowEmpty && <option disabled value="">---</option>}
-                <option value="0">E</option>
-                <option value="1">F</option>
-                <option value="2">F#/Gb</option>
-                <option value="3">G</option>
-                <option value="4">G#/Ab</option>
-                <option value="5">A</option>
-                <option value="6">A#/Bb</option>
-                <option value="7">B</option>
-                <option value="8">C</option>
-                <option value="9">C#/Db</option>
-                <option value="10">D</option>
-                <option value="11">D#/Eb</option>
-            </select>
-        )
-    }
-
-    const handleTypeChange = (event) => {
-        console.log(event);
-        setType(event.target.value);
-    };
+    const handleTypeChange = (event) => setType(event.target.value);
 
     return (
         <div id="app">
-        <div className="tuning">
-          <span>Tuning </span>
-          {tuning.map((defaultNote, i) => tuningNote(defaultNote, (val) => handleTuningChange(i, val), false))}
+            <a
+                className="brand"
+                href="/"
+                onClick={(e) => { e.preventDefault(); onBack(); }}
+            >
+                &lt; back
+            </a>
+
+            <div className="panel">
+                <div className="field">
+                    <span className="field-label">Tuning</span>
+                    <div className="tuning">
+                        {tuning.map((defaultNote, i) => (
+                            <NoteSelect
+                                key={i}
+                                value={defaultNote}
+                                onChange={(val) => handleTuningChange(i, val)}
+                                allowEmpty={false}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                <div className="field">
+                    <span className="field-label">Notes</span>
+                    <div className="notes">
+                        {NOTE_LABELS.map(([label, value]) => (
+                            <label className="note-toggle" key={value}>
+                                <input type="checkbox" value={value} onChange={handleNoteChange} />
+                                <span>{label}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="field">
+                    <span className="field-label">Root</span>
+                    <NoteSelect value={root} onChange={setRoot} allowEmpty={true} />
+                </div>
+
+                <div className="field value-toggle">
+                    <label>
+                        <input type="radio" name="value" value="note" checked={type === "note"} onChange={handleTypeChange} />
+                        <span>Note</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="value" value="interval" checked={type === "interval"} onChange={handleTypeChange} />
+                        <span>Interval</span>
+                    </label>
+                </div>
+
+                <button
+                    className="button"
+                    onClick={fetchImage}
+                    disabled={loading || root === "" || notes.length === 0}
+                >
+                    {loading ? 'Loading…' : 'Show'}
+                </button>
+
+                {error && <p className="error">Error: {error}</p>}
+            </div>
+
+            {loading && <img className="spinner" src="/images/spinner.gif" alt="Loading" />}
+
+            {imageUrl && !loading && (
+                <div className="image-container">
+                    <img src={imageUrl} alt="Fretboard" />
+                </div>
+            )}
         </div>
-    
-        <div className="notes">
-          <input type="checkbox" id="E" name="E" value="0" onChange={handleNoteChange}/><span>E</span>
-          <input type="checkbox" id="F" name="F" value="1" onChange={handleNoteChange} /><span>F</span>
-          <input type="checkbox" id="Gb" name="Gb" value="2" onChange={handleNoteChange} /><span>F#/Gb</span>
-          <input type="checkbox" id="G" name="G" value="3" onChange={handleNoteChange} /><span>G</span>
-          <input type="checkbox" id="Ab" name="Ab" value="4" onChange={handleNoteChange} /><span>G#/Ab</span>
-          <input type="checkbox" id="A" name="A" value="5" onChange={handleNoteChange} /><span>A</span>
-          <input type="checkbox" id="Bb" name="Bb" value="6" onChange={handleNoteChange} /><span>A#/Bb</span>
-          <input type="checkbox" id="B" name="B" value="7" onChange={handleNoteChange} /><span>B</span>
-          <input type="checkbox" id="C" name="C" value="8" onChange={handleNoteChange} /><span>C</span>
-          <input type="checkbox" id="Db" name="Db" value="9" onChange={handleNoteChange} /><span>C#/Db</span>
-          <input type="checkbox" id="D" name="D" value="10" onChange={handleNoteChange} /><span>D</span>
-          <input type="checkbox" id="Eb" name="Eb" value="11" onChange={handleNoteChange} /><span>D#/Eb</span>
-        </div>
-    
-      <div className="selectbox" >
-        <span>Root </span>
-        {tuningNote("", setRoot, true)}
-      </div>
-    
-      <div className="value">
-        <input type="radio" id="note" name="value" value="note" checked={type === "note"} onChange={handleTypeChange} />
-        <label htmlFor="male">Note</label>
-        <input type="radio" id="interval" name="value" value="interval" checked={type === "interval"} onChange={handleTypeChange} />
-        <label htmlFor="female">Interval</label>
-      </div>
-    
-      <button className="button" onClick={fetchImage} disabled={loading || root === "" || notes.length === 0}>
-        Show
-      </button>
-
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-
-      {imageUrl && (
-        <div className="image-container">
-            <img src={imageUrl} alt="Fetched" />
-        </div>
-      )}
-
-      { loading && <img className="spinner" src="./images/spinner.gif" /> }
-
-      </div>
     );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+function Root() {
+    const [path, navigate] = useRoute();
+
+    if (path === '/frets') {
+        return <FretsApp onBack={() => navigate('/')} />;
+    }
+
+    return <Landing />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Root />);
