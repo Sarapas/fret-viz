@@ -34,10 +34,18 @@ function NoteSelect({ value, onChange, allowEmpty }) {
 }
 
 function Landing() {
+    useEffect(() => {
+        document.title = "SKAFANDRAS";
+    }, []);
+
     return <div className="landing" />;
 }
 
 function FretsApp({ onBack }) {
+    useEffect(() => {
+        document.title = "Fret Viz";
+    }, []);
+
     const [imageUrl, setImageUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
