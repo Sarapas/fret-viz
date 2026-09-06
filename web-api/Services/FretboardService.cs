@@ -60,7 +60,7 @@ public class FretboardService : IFretboardService
             var circle = new EllipsePolygon(location, R);
             var fillColor = isRoot ? Color.Red : Color.Black;
             var outlinePen = new SolidPen(Color.Black, 1);
-            var fo = SystemFonts.Get("Tahoma");
+            var fo = SystemFonts.Get("DejaVu Sans");
             var font = new Font(fo, 19, FontStyle.Bold);
             var fontLocation = new PointF(fretPos, stringPos);
 
