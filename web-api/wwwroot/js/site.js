@@ -10,7 +10,7 @@ const NOTE_LABELS = [
 // pixel-for-pixel, integer-division quirks included.
 const BOARD_IMAGE_SRC = '/images/fretboard-large.png';
 const NOTE_NAMES = ['E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#'];
-const INTERVAL_LABELS = ['R', 'm2', '2', 'm3', '3', 'P4', '4#', 'P5', 'm6', '6', 'm7', '7'];
+const INTERVAL_LABELS = ['R', 'm2', '2', 'm3', '3', '4', '4#', '5', 'm6', '6', 'm7', '7'];
 const FRET_WIDTHS = [20, 142, 200, 190, 178, 170, 158, 152, 137, 134, 122, 120, 112];
 const STRING_TOP_OPEN = 92;
 const STRING_BOTTOM_OPEN = 286;
@@ -48,8 +48,6 @@ function drawFretboard(board, { tuning, notes, root, type }) {
 
     if (notes.length === 0) return canvas.toDataURL('image/png');
 
-    const effectiveRoot = root !== "" ? parseInt(root, 10) : notes[0];
-
     ctx.font = 'bold 19px Arial, Helvetica, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -59,9 +57,9 @@ function drawFretboard(board, { tuning, notes, root, type }) {
             const note = getNoteAt(tuning, fret, str);
             if (!notes.includes(note)) continue;
 
-            const isRoot = note === effectiveRoot;
+            const isRoot = note === root;
             const label = type === 'interval'
-                ? INTERVAL_LABELS[(note - effectiveRoot + 12) % 12]
+                ? INTERVAL_LABELS[(note - root + 12) % 12]
                 : NOTE_NAMES[note];
 
             const x = getFretX(fret);
@@ -100,14 +98,53 @@ function useRoute() {
     return [path, navigate];
 }
 
-function NoteSelect({ value, onChange, allowEmpty }) {
+function NoteSelect({ value, onChange }) {
     return (
-        <select value={value} onChange={(e) => onChange(e.target.value)}>
-            {allowEmpty && <option disabled value="">---</option>}
+        <select value={value} onChange={(e) => onChange(parseInt(e.target.value, 10))}>
             {NOTE_LABELS.map(([label, val]) => (
                 <option key={val} value={val}>{label}</option>
             ))}
         </select>
+    );
+}
+
+function IntervalChip({ label, noteName, checked, fixed, onToggle }) {
+    return (
+        <label className="interval-toggle">
+            <input
+                type="checkbox"
+                className="interval-toggle-input"
+                checked={checked}
+                disabled={fixed}
+                onChange={onToggle}
+            />
+            <span className={
+                "interval-chip" +
+                (checked ? " interval-chip--active" : "") +
+                (fixed ? " interval-chip--fixed" : "")
+            }>
+                <span className="interval-chip-label">{label}</span>
+                <span className="interval-chip-note">{noteName}</span>
+            </span>
+        </label>
+    );
+}
+
+function SegmentedToggle({ options, value, onChange }) {
+    return (
+        <div className="segmented" role="radiogroup">
+            {options.map(([label, val]) => (
+                <button
+                    type="button"
+                    key={val}
+                    className={"segmented-option" + (value === val ? " segmented-option--active" : "")}
+                    aria-pressed={value === val}
+                    onClick={() => onChange(val)}
+                >
+                    {label}
+                </button>
+            ))}
+        </div>
     );
 }
 
@@ -127,8 +164,8 @@ function FretsApp({ onBack }) {
     const boardImageRef = useRef(null);
     const [boardReady, setBoardReady] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
-    const [root, setRoot] = useState("");
-    const [notes, setNotes] = useState([]);
+    const [root, setRoot] = useState(0);
+    const [intervals, setIntervals] = useState([0]);
     const [tuning, setTuning] = useState([0, 5, 10, 3, 7, 0]);
     const [type, setType] = useState('interval');
 
@@ -141,30 +178,25 @@ function FretsApp({ onBack }) {
         img.src = BOARD_IMAGE_SRC;
     }, []);
 
-    const handleNoteChange = (event) => {
-        const value = parseInt(event.target.value, 10);
-        setNotes(prevNotes =>
-            event.target.checked
-                ? [...prevNotes, value]
-                : prevNotes.filter(note => note !== value)
+    const handleIntervalToggle = (offset) => {
+        setIntervals(prev =>
+            prev.includes(offset)
+                ? prev.filter(i => i !== offset)
+                : [...prev, offset]
         );
     };
 
     const handleTuningChange = (index, value) => {
         const newTuning = [...tuning];
-        newTuning[index] = parseInt(value, 10);
+        newTuning[index] = value;
         setTuning(newTuning);
     };
 
     useEffect(() => {
-        if (!boardReady || notes.length === 0 || root === "") {
-            setImageUrl(null);
-            return;
-        }
+        if (!boardReady) return;
+        const notes = intervals.map(offset => (root + offset) % 12);
         setImageUrl(drawFretboard(boardImageRef.current, { tuning, notes, root, type }));
-    }, [boardReady, tuning, notes, root, type]);
-
-    const handleTypeChange = (event) => setType(event.target.value);
+    }, [boardReady, tuning, intervals, root, type]);
 
     return (
         <div id="app">
@@ -178,53 +210,54 @@ function FretsApp({ onBack }) {
 
             <div className="panel">
                 <div className="field">
+                    <span className="field-label">Root</span>
+                    <NoteSelect value={root} onChange={setRoot} />
+                </div>
+
+                <div className="field">
                     <span className="field-label">Tuning</span>
                     <div className="tuning">
                         {tuning.map((defaultNote, i) => (
-                            <NoteSelect
-                                key={i}
-                                value={defaultNote}
-                                onChange={(val) => handleTuningChange(i, val)}
-                                allowEmpty={false}
+                            <div className="tuning-string" key={i}>
+                                <NoteSelect
+                                    value={defaultNote}
+                                    onChange={(val) => handleTuningChange(i, val)}
+                                />
+                                <span className="tuning-string-number">{6 - i}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="field">
+                    <span className="field-label">Intervals from root</span>
+                    <div className="intervals-grid">
+                        {INTERVAL_LABELS.map((label, offset) => (
+                            <IntervalChip
+                                key={offset}
+                                label={label}
+                                noteName={NOTE_NAMES[(root + offset) % 12]}
+                                checked={offset === 0 || intervals.includes(offset)}
+                                fixed={offset === 0}
+                                onToggle={() => handleIntervalToggle(offset)}
                             />
                         ))}
                     </div>
                 </div>
 
                 <div className="field">
-                    <span className="field-label">Notes</span>
-                    <div className="notes">
-                        {NOTE_LABELS.map(([label, value]) => (
-                            <label className="note-toggle" key={value}>
-                                <input type="checkbox" value={value} onChange={handleNoteChange} />
-                                <span>{label}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="field">
-                    <span className="field-label">Root</span>
-                    <NoteSelect value={root} onChange={setRoot} allowEmpty={true} />
-                </div>
-
-                <div className="field value-toggle">
-                    <label>
-                        <input type="radio" name="value" value="note" checked={type === "note"} onChange={handleTypeChange} />
-                        <span>Note</span>
-                    </label>
-                    <label>
-                        <input type="radio" name="value" value="interval" checked={type === "interval"} onChange={handleTypeChange} />
-                        <span>Interval</span>
-                    </label>
+                    <span className="field-label">Show as</span>
+                    <SegmentedToggle
+                        options={[['Interval', 'interval'], ['Note', 'note']]}
+                        value={type}
+                        onChange={setType}
+                    />
                 </div>
             </div>
 
-            {imageUrl && (
-                <div className="image-container">
-                    <img src={imageUrl} alt="Fretboard" />
-                </div>
-            )}
+            <div className="image-container">
+                {imageUrl && <img src={imageUrl} alt="Fretboard" />}
+            </div>
         </div>
     );
 }
