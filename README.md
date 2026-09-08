@@ -9,10 +9,10 @@ black page; the app itself lives at [`/frets`](https://skafandras.lt/frets)).
 
 ## Stack
 
-- **Backend**: ASP.NET Core 8 (`web-api/`), serving a JSON API and the
-  static frontend. Fretboard images are rendered server-side with
-  [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp) over a
-  background image (`web-api/images/fretboard-large.png`).
+- **Backend**: ASP.NET Core 8 (`web-api/`) is just a static file host
+  now — it serves `wwwroot` and has no fretboard-related API surface.
+  (`web-api/FluentApi` is a separate, older music-theory library used
+  only by the test suite; it's unrelated to the visualizer itself.)
 - **Frontend**: React, loaded via CDN with in-browser Babel
   (`web-api/wwwroot`) — no build step or bundler. It's a tiny two-route
   SPA with a hand-rolled router (`window.history` + `popstate`):
@@ -21,8 +21,16 @@ black page; the app itself lives at [`/frets`](https://skafandras.lt/frets)).
     link to it from `/`. Direct loads/refreshes work via an ASP.NET
     Core SPA fallback route (`MapFallbackToFile("index.html")` in
     `Program.cs`).
+
+  All fretboard drawing happens client-side on a `<canvas>`
+  (`web-api/wwwroot/js/site.js`): it loads the background photo
+  (`web-api/wwwroot/images/fretboard-large.png`), computes fret/string
+  pixel positions and note/interval labels in JS, and draws circles +
+  text directly onto the canvas, then displays it via
+  `canvas.toDataURL()`. No network round-trip per render.
 - **Tests**: `tests/` — xUnit tests for the music-theory logic in
-  `web-api/FluentApi`.
+  `web-api/FluentApi` (unrelated to the visualizer; currently broken —
+  see Known issues).
 
 ## Local development
 
@@ -44,21 +52,18 @@ Run tests with:
 dotnet test tests/tests.csproj
 ```
 
-### API
+(See Known issues — this currently fails to build, unrelated to the
+visualizer.)
 
-`POST /fretboard/image` — returns a `data:image/png;base64,...` string.
+### Fretboard drawing math
 
-```json
-{
-  "tuning": [0, 5, 10, 3, 7, 0],
-  "notes": [0, 4, 7],
-  "root": 0,
-  "value": "interval"
-}
-```
-
-Notes/tuning/root are integers 0–11 (`0 = E, 1 = F, 2 = F#/Gb, ...`).
-`value` is `"note"` or `"interval"`.
+`web-api/wwwroot/js/site.js` encodes notes/tuning/root as integers
+0–11 (`0 = E, 1 = F, 2 = F#, ...`, see `NOTE_LABELS`/`NOTE_NAMES`).
+Fret and string pixel positions are derived from constants
+(`FRET_WIDTHS`, `STRING_TOP_OPEN`, etc.) reverse-engineered from the
+background photo's geometry, replicating the integer-division
+rounding the original server-side renderer used so the layout lines
+up with the photo pixel-for-pixel.
 
 ## Docker
 
@@ -66,12 +71,6 @@ Notes/tuning/root are integers 0–11 (`0 = E, 1 = F, 2 = F#/Gb, ...`).
 docker build -f web-api/Dockerfile -t fret-viz .
 docker run -p 8080:8080 fret-viz
 ```
-
-The container installs `fonts-dejavu-core` so ImageSharp has a font
-available for drawing note labels (the code falls back through
-DejaVu Sans → Tahoma → Liberation Sans → Arial, whichever is present,
-so it also works unmodified on a Windows dev machine, which has Tahoma
-but not DejaVu Sans).
 
 ## Deployment
 
@@ -94,5 +93,9 @@ control the zone.)
 
 ## Known issues
 
-- `SixLabors.ImageSharp` 3.1.5 has known advisories (GHSA-2cmq-823j-5qj8,
-  GHSA-rxmq-m78w-7wmc) flagged by Dependabot. Not yet upgraded.
+- `tests/FluentApiTests.cs` doesn't compile: it references `ScaleGuide`,
+  `NoteEnum`, `IntervalEnum` etc. from `web-api/FluentApi` without a
+  `using` directive. This happens to work when a test file is lexically
+  nested under the same namespace, but `FluentApiTests.cs` isn't — so
+  the build fails with `CS0103`. Pre-existing, unrelated to the
+  visualizer; not yet fixed.

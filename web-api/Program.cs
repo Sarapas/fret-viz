@@ -1,12 +1,6 @@
-using WebApi.Interfaces;
-using WebApi.Services;
-
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddRazorPages();
-
-builder.Services.AddScoped<IFretboardService, FretboardService>();
 
 var app = builder.Build();
 
@@ -31,7 +25,6 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapRazorPages();
-app.MapControllers();
 app.MapFallbackToFile("index.html");
 
 app.Run();

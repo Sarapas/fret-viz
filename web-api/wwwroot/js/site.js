@@ -1,9 +1,87 @@
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 const NOTE_LABELS = [
     ['E', '0'], ['F', '1'], ['F#/Gb', '2'], ['G', '3'], ['G#/Ab', '4'], ['A', '5'],
     ['A#/Bb', '6'], ['B', '7'], ['C', '8'], ['C#/Db', '9'], ['D', '10'], ['D#/Eb', '11']
 ];
+
+// Fretboard drawing: ported from the server-side ImageSharp renderer so the
+// layout matches the source photo (web-api/wwwroot/images/fretboard-large.png)
+// pixel-for-pixel, integer-division quirks included.
+const BOARD_IMAGE_SRC = '/images/fretboard-large.png';
+const NOTE_NAMES = ['E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#'];
+const INTERVAL_LABELS = ['R', 'm2', '2', 'm3', '3', 'P4', '4#', 'P5', 'm6', '6', 'm7', '7'];
+const FRET_WIDTHS = [20, 142, 200, 190, 178, 170, 158, 152, 137, 134, 122, 120, 112];
+const STRING_TOP_OPEN = 92;
+const STRING_BOTTOM_OPEN = 286;
+const STRING_TOP_FRET12 = 66;
+const STRING_BOTTOM_FRET12 = 310;
+const NOTE_RADIUS = 18;
+
+function idiv(a, b) {
+    return Math.trunc(a / b);
+}
+
+function getNoteAt(tuning, fret, str) {
+    return (tuning[5 - str] + fret) % 12;
+}
+
+function getFretX(fret) {
+    let x = 0;
+    for (let f = 0; f <= fret; f++) x += FRET_WIDTHS[f];
+    return x;
+}
+
+function getStringY(fret, str) {
+    const top = STRING_TOP_OPEN - idiv(STRING_TOP_OPEN - STRING_TOP_FRET12, 12) * fret;
+    const bottom = STRING_BOTTOM_OPEN + idiv(STRING_BOTTOM_FRET12 - STRING_BOTTOM_OPEN, 12) * fret;
+    return top + idiv(bottom - top, 5) * str;
+}
+
+function drawFretboard(board, { tuning, notes, root, type }) {
+    const canvas = document.createElement('canvas');
+    canvas.width = board.naturalWidth;
+    canvas.height = board.naturalHeight;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(board, 0, 0);
+
+    if (notes.length === 0) return canvas.toDataURL('image/png');
+
+    const effectiveRoot = root !== "" ? parseInt(root, 10) : notes[0];
+
+    ctx.font = 'bold 19px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let fret = 0; fret <= 12; fret++) {
+        for (let str = 0; str < 6; str++) {
+            const note = getNoteAt(tuning, fret, str);
+            if (!notes.includes(note)) continue;
+
+            const isRoot = note === effectiveRoot;
+            const label = type === 'interval'
+                ? INTERVAL_LABELS[(note - effectiveRoot + 12) % 12]
+                : NOTE_NAMES[note];
+
+            const x = getFretX(fret);
+            const y = getStringY(fret, str);
+
+            ctx.beginPath();
+            ctx.arc(x, y, NOTE_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = isRoot ? '#ff0000' : '#000000';
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#000000';
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(label, x, y);
+        }
+    }
+
+    return canvas.toDataURL('image/png');
+}
 
 function useRoute() {
     const [path, setPath] = useState(window.location.pathname);
@@ -46,13 +124,22 @@ function FretsApp({ onBack }) {
         document.title = "Fret Viz";
     }, []);
 
+    const boardImageRef = useRef(null);
+    const [boardReady, setBoardReady] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [root, setRoot] = useState("");
     const [notes, setNotes] = useState([]);
     const [tuning, setTuning] = useState([0, 5, 10, 3, 7, 0]);
     const [type, setType] = useState('interval');
+
+    useEffect(() => {
+        const img = new Image();
+        img.onload = () => {
+            boardImageRef.current = img;
+            setBoardReady(true);
+        };
+        img.src = BOARD_IMAGE_SRC;
+    }, []);
 
     const handleNoteChange = (event) => {
         const value = parseInt(event.target.value, 10);
@@ -69,34 +156,8 @@ function FretsApp({ onBack }) {
         setTuning(newTuning);
     };
 
-    const fetchImage = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await fetch('/fretboard/image', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    notes: notes,
-                    tuning: tuning,
-                    root: parseInt(root, 10),
-                    value: type
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch image');
-            }
-
-            const imageData = await response.text();
-            setImageUrl(imageData);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+    const handleShow = () => {
+        setImageUrl(drawFretboard(boardImageRef.current, { tuning, notes, root, type }));
     };
 
     const handleTypeChange = (event) => setType(event.target.value);
@@ -156,18 +217,14 @@ function FretsApp({ onBack }) {
 
                 <button
                     className="button"
-                    onClick={fetchImage}
-                    disabled={loading || root === "" || notes.length === 0}
+                    onClick={handleShow}
+                    disabled={!boardReady || root === "" || notes.length === 0}
                 >
-                    {loading ? 'Loading…' : 'Show'}
+                    Show
                 </button>
-
-                {error && <p className="error">Error: {error}</p>}
             </div>
 
-            {loading && <img className="spinner" src="/images/spinner.gif" alt="Loading" />}
-
-            {imageUrl && !loading && (
+            {imageUrl && (
                 <div className="image-container">
                     <img src={imageUrl} alt="Fretboard" />
                 </div>
