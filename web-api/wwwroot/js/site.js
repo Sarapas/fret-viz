@@ -156,9 +156,13 @@ function FretsApp({ onBack }) {
         setTuning(newTuning);
     };
 
-    const handleShow = () => {
+    useEffect(() => {
+        if (!boardReady || notes.length === 0 || root === "") {
+            setImageUrl(null);
+            return;
+        }
         setImageUrl(drawFretboard(boardImageRef.current, { tuning, notes, root, type }));
-    };
+    }, [boardReady, tuning, notes, root, type]);
 
     const handleTypeChange = (event) => setType(event.target.value);
 
@@ -214,14 +218,6 @@ function FretsApp({ onBack }) {
                         <span>Interval</span>
                     </label>
                 </div>
-
-                <button
-                    className="button"
-                    onClick={handleShow}
-                    disabled={!boardReady || root === "" || notes.length === 0}
-                >
-                    Show
-                </button>
             </div>
 
             {imageUrl && (
